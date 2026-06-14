@@ -1,0 +1,76 @@
+version: '3.9'
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB:       content_review_queue
+      POSTGRES_USER:     crq_user
+      POSTGRES_PASSWORD: crq_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crq_user -d content_review_queue"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      target: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      PORT:                    4000
+      NODE_ENV:                production
+      DB_HOST:                 postgres
+      DB_PORT:                 5432
+      DB_NAME:                 content_review_queue
+      DB_USER:                 crq_user
+      DB_PASSWORD:             crq_pass
+      REDIS_HOST:              redis
+      REDIS_PORT:              6379
+      JWT_SECRET:              change_this_in_production_please
+      JWT_EXPIRES_IN:          8h
+      RESERVATION_TTL_SECONDS: 1200
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Backend is only accessed via the nginx proxy; no direct port exposure needed
+    # Expose it anyway for direct curl testing during development
+    ports:
+      - "4000:4000"
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    # REACT_APP_API_URL is intentionally NOT set here.
+    # The React app is a static build — env vars are baked in at build time, not runtime.
+    # The nginx.conf inside the container proxies /auth/, /tickets/, /metrics to backend:4000
+    # so the browser always calls relative paths (or http://localhost:3000/...).
+    # See frontend/nginx.conf and frontend/src/api/client.js for how this is wired.
+
+volumes:
+  postgres_data:
+  redis_data:

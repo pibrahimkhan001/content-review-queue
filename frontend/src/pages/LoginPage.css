@@ -1,0 +1,83 @@
+.login-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+  padding: 24px;
+}
+
+.login-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.login-brand { text-align: center; margin-bottom: 32px; }
+.login-icon { font-size: 36px; color: var(--accent-light); display: block; margin-bottom: 12px; }
+.login-brand h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+.login-brand p { color: var(--text-secondary); font-size: 14px; }
+
+.login-form { display: flex; flex-direction: column; gap: 16px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+.field input, .field select {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); }
+.field select option { background: var(--bg-card); }
+
+.login-error {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: var(--radius);
+  color: #fca5a5;
+  font-size: 13px;
+  padding: 10px 14px;
+}
+
+.login-submit {
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px;
+  transition: background 0.15s;
+  margin-top: 4px;
+}
+.login-submit:hover:not(:disabled) { background: #4f46e5; }
+.login-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.demo-section { margin-top: 28px; }
+.demo-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 10px; }
+.demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.demo-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  font-size: 13px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.demo-btn:hover { border-color: var(--accent); background: rgba(99,102,241,0.08); }
+.demo-btn strong { font-weight: 600; }
+.demo-btn span { font-size: 11px; color: var(--text-secondary); }
