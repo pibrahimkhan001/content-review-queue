@@ -7,8 +7,8 @@ export default function DashboardPage({ session }) {
   const [tickets, setTickets]                 = useState([]);
   const [loading, setLoading]                 = useState(true);
   const [error, setError]                     = useState('');
-  const [actionStates, setActionStates]       = useState({}); // ticketId → { loading, message, type }
-  const [activeReservation, setActiveReservation] = useState(null); // { ticketId, expiresAt }
+  const [actionStates, setActionStates]       = useState({}); 
+  const [activeReservation, setActiveReservation] = useState(null); 
   const [timeLeft, setTimeLeft]               = useState(null);
   const [liveConnected, setLiveConnected]     = useState(false);
 
@@ -45,7 +45,6 @@ export default function DashboardPage({ session }) {
     es.onerror = () => setLiveConnected(false);
     sseRef.current = es;
 
-    // Fallback: also poll every 15 s in case SSE drops
     loadTickets();
     pollRef.current = setInterval(loadTickets, 15_000);
 

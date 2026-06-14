@@ -1,14 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { pool } = require('../models/db');
 
-/**
- * POST /auth/login
- * Body: { reviewer_id, locale }
- *
- * Looks up the reviewer by reviewer_id. If the record exists and the
- * locale matches, issues a signed JWT. The locale claim in the token is
- * the canonical source of truth used downstream for locale scoping.
- */
+
 async function login(req, res) {
   const { reviewer_id, locale } = req.body;
 

@@ -6,10 +6,7 @@ const {
   getMetrics,
 } = require('../services/ticketService');
 
-/**
- * GET /tickets/available
- * Returns all available tickets for the authenticated reviewer's locale.
- */
+
 async function listAvailable(req, res) {
   try {
     const tickets = await getAvailableTickets(req.reviewer.locale);
@@ -20,10 +17,7 @@ async function listAvailable(req, res) {
   }
 }
 
-/**
- * POST /tickets/:id/reserve
- * Reserves a ticket for the authenticated reviewer if it is available and in their locale.
- */
+
 async function reserve(req, res) {
   const { id } = req.params;
   try {
@@ -42,11 +36,7 @@ async function reserve(req, res) {
   }
 }
 
-/**
- * POST /tickets/:id/confirm
- * Confirms that the reviewer has begun processing the reserved ticket.
- * Must be called within the 20-minute window.
- */
+
 async function confirm(req, res) {
   const { id } = req.params;
   try {
@@ -61,12 +51,7 @@ async function confirm(req, res) {
   }
 }
 
-/**
- * GET /tickets/my-reservations
- * Returns the authenticated reviewer's currently-active reservations
- * (i.e. tickets they have picked up and have not yet confirmed),
- * ordered by soonest-expiring first. Powers the "Process Tickets" view.
- */
+
 async function myReservations(req, res) {
   try {
     const reservations = await getMyReservations(req.reviewer.reviewer_id);
@@ -77,10 +62,7 @@ async function myReservations(req, res) {
   }
 }
 
-/**
- * GET /metrics
- * Returns queue health statistics. No auth required so dashboards can poll freely.
- */
+
 async function metrics(req, res) {
   try {
     const data = await getMetrics();

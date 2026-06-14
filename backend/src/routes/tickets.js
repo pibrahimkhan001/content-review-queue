@@ -5,7 +5,6 @@ const { streamTickets } = require('../controllers/sseController');
 
 const router = express.Router();
 
-// All ticket routes require a valid JWT
 router.get('/available',       authenticate, listAvailable);
 router.get('/my-reservations', authenticate, myReservations);
 router.get('/stream',          streamTickets);

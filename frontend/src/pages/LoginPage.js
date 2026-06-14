@@ -4,7 +4,6 @@ import './LoginPage.css';
 
 const LOCALES = ['West Coast', 'East Coast', 'Midwest', 'South'];
 
-// Hardcoded demo credentials matching the seed script
 const DEMO_ACCOUNTS = [
   { reviewer_id: 'alice',  locale: 'West Coast' },
   { reviewer_id: 'bob',    locale: 'East Coast' },

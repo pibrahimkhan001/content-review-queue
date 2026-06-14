@@ -1,12 +1,4 @@
-/**
- * Seed script — runs once at startup to populate reviewers and tickets.
- * Strategy: seed data is the simplest approach that keeps the service
- * self-contained, fully dockerized, and immediately testable without
- * any external file ingestion pipeline.
- *
- * Reviewers use a deterministic set so the frontend can use hardcoded
- * credentials for the demo walkthrough.
- */
+
 require('dotenv').config();
 const { pool } = require('../models/db');
 const { v4: uuidv4 } = require('uuid');

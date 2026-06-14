@@ -8,10 +8,7 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD || 'crq_pass',
 });
 
-/**
- * Run SQL migrations to create all required tables.
- * Uses IF NOT EXISTS so it's safe to call on every startup.
- */
+
 async function initializeDatabase() {
   const client = await pool.connect();
   try {

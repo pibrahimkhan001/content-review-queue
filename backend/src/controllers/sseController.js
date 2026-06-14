@@ -1,15 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { getAvailableTickets } = require('../services/ticketService');
 
-/**
- * GET /tickets/stream?token=<jwt>
- *
- * Server-Sent Events endpoint. Pushes the current available-ticket list
- * every 10 seconds to the connected reviewer.
- *
- * EventSource in browsers does not support custom headers, so the JWT is
- * passed as a query parameter here instead of the Authorization header.
- */
+
 async function streamTickets(req, res) {
   const rawToken = req.query.token;
   if (!rawToken) { res.status(401).end('Missing token'); return; }

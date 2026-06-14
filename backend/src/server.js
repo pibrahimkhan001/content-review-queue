@@ -9,19 +9,14 @@ const PORT = parseInt(process.env.PORT) || 4000;
 
 async function start() {
   try {
-    // 1. Init DB schema
     await initializeDatabase();
 
-    // 2. Warm up Redis connection
     await getRedisClient();
 
-    // 3. Seed initial data (idempotent)
     await seed();
 
-    // 4. Start background expiry sweep
     startExpiryJob();
 
-    // 5. Start HTTP server
     app.listen(PORT, () => {
       console.log(`[Server] Content Review Queue API running on port ${PORT}`);
     });

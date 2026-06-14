@@ -11,24 +11,12 @@ const formatTime = (secs) => {
   return `${m}:${s}`;
 };
 
-/**
- * "Process Tickets" tab.
- *
- * Once a reviewer reserves a ticket it disappears from the "Available
- * Tickets" queue (its status is no longer `available`), so this page is
- * where the reviewer actually lands to act on what they picked up.
- *
- * It lists every ticket the reviewer currently holds an *active*
- * reservation for, along with a live countdown to its 20-minute expiry,
- * and a "Start Processing" action that calls the existing
- * `POST /tickets/:id/confirm` endpoint — moving the ticket to `confirmed`
- * and stopping its auto-release clock.
- */
+
 export default function ProcessTicketsPage({ session }) {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading]            = useState(true);
   const [error, setError]                = useState('');
-  const [actionStates, setActionStates]  = useState({}); // reservationId → { loading, message, type }
+  const [actionStates, setActionStates]  = useState({}); 
   const [now, setNow]                    = useState(Date.now());
 
   const pollRef  = useRef(null);
@@ -53,8 +41,7 @@ export default function ProcessTicketsPage({ session }) {
 
   useEffect(() => {
     loadReservations();
-    // Poll periodically so reservations made/confirmed/expired elsewhere
-    // (or via another tab) stay in sync.
+    
     pollRef.current = setInterval(loadReservations, 5_000);
     return () => clearInterval(pollRef.current);
   }, [loadReservations]);
@@ -75,14 +62,12 @@ export default function ProcessTicketsPage({ session }) {
         ...s,
         [reservation.reservation_id]: { message: 'Processing started!', type: 'success' },
       }));
-      // Refresh so the confirmed ticket drops off this list shortly after.
       setTimeout(loadReservations, 400);
     } catch (err) {
       setActionStates((s) => ({
         ...s,
         [reservation.reservation_id]: { message: err.message, type: 'error' },
       }));
-      // The ticket may have expired between renders — refresh either way.
       loadReservations();
     }
   }

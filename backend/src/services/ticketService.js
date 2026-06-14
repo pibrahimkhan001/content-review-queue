@@ -1,18 +1,12 @@
 const { pool } = require('../models/db');
 const { getRedisClient } = require('../models/redis');
 
-const RESERVATION_TTL = parseInt(process.env.RESERVATION_TTL_SECONDS) || 1200; // 20 minutes
+const RESERVATION_TTL = parseInt(process.env.RESERVATION_TTL_SECONDS) || 1200; 
 
-/**
- * Cache key for the available-ticket list per locale.
- * TTL is kept short (15 s) so cache never diverges from DB state long.
- */
+
 const availableCacheKey = (locale) => `available:${locale.toLowerCase().replace(/\s+/g, '_')}`;
 
-/**
- * Returns all tickets with status='available' scoped to the given locale.
- * Results are cached in Redis for 15 seconds to reduce DB load on hot paths.
- */
+
 async function getAvailableTickets(locale) {
   const redis = await getRedisClient();
   const cacheKey = availableCacheKey(locale);
@@ -34,19 +28,12 @@ async function getAvailableTickets(locale) {
   return rows;
 }
 
-/**
- * Attempts to reserve a ticket for a reviewer.
- * Uses a SELECT … FOR UPDATE to prevent double-reservation under concurrency.
- *
- * Returns: { success, ticket, reservation } on success
- *          { success: false, reason } on failure
- */
+
 async function reserveTicket(ticketId, reviewerId, locale) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    // Lock the row so no concurrent request can sneak in
     const { rows: ticketRows } = await client.query(
       `SELECT id, locale, status FROM tickets WHERE id = $1 FOR UPDATE`,
       [ticketId]
@@ -69,7 +56,6 @@ async function reserveTicket(ticketId, reviewerId, locale) {
       return { success: false, reason: `Ticket is currently ${ticket.status}` };
     }
 
-    // Update ticket status
     await client.query(
       `UPDATE tickets SET status = 'reserved' WHERE id = $1`,
       [ticketId]
@@ -77,7 +63,6 @@ async function reserveTicket(ticketId, reviewerId, locale) {
 
     const expiresAt = new Date(Date.now() + RESERVATION_TTL * 1000);
 
-    // Create reservation record
     const { rows: resRows } = await client.query(
       `INSERT INTO reservations (ticket_id, reviewer_id, expires_at)
        VALUES ($1, $2, $3)
@@ -87,14 +72,12 @@ async function reserveTicket(ticketId, reviewerId, locale) {
 
     await client.query('COMMIT');
 
-    // Invalidate cache for this locale
     const redis = await getRedisClient();
     await redis.del(availableCacheKey(locale));
 
-    // Schedule auto-release via Redis key expiry signal (belt-and-suspenders with cron)
     await redis.setEx(
       `reservation:expiry:${resRows[0].id}`,
-      RESERVATION_TTL + 5, // slight buffer
+      RESERVATION_TTL + 5,
       JSON.stringify({ reservation_id: resRows[0].id, ticket_id: ticketId, locale })
     );
 
@@ -107,10 +90,7 @@ async function reserveTicket(ticketId, reviewerId, locale) {
   }
 }
 
-/**
- * Confirms an active reservation, transitioning the ticket to 'confirmed'.
- * Must be called by the reviewer who holds the reservation, within the TTL.
- */
+
 async function confirmTicket(ticketId, reviewerId) {
   const client = await pool.connect();
   try {
@@ -136,7 +116,6 @@ async function confirmTicket(ticketId, reviewerId) {
     const res = rows[0];
 
     if (new Date() > new Date(res.expires_at)) {
-      // Expired — release it
       await client.query(`UPDATE reservations SET status = 'expired' WHERE id = $1`, [res.res_id]);
       await client.query(`UPDATE tickets SET status = 'available' WHERE id = $1`, [ticketId]);
       await client.query('COMMIT');
@@ -161,13 +140,7 @@ async function confirmTicket(ticketId, reviewerId) {
   }
 }
 
-/**
- * Returns all currently-active reservations held by a reviewer, joined with
- * their ticket details. Used by the "Process Tickets" view so a reviewer can
- * see exactly what they've picked up and start processing it.
- *
- * Ordered by soonest-expiring first so the most urgent ticket surfaces on top.
- */
+
 async function getMyReservations(reviewerId) {
   const { rows } = await pool.query(
     `SELECT r.id AS reservation_id, r.reserved_at, r.expires_at,
@@ -194,10 +167,7 @@ async function getMyReservations(reviewerId) {
   }));
 }
 
-/**
- * Scans for expired active reservations and releases them back into the queue.
- * Called by the background cron job every 30 seconds.
- */
+
 async function releaseExpiredReservations() {
   const client = await pool.connect();
   try {
@@ -217,7 +187,6 @@ async function releaseExpiredReservations() {
       [ticketIds]
     );
 
-    // Bust cache for affected locales
     const redis = await getRedisClient();
     const locales = [...new Set(rows.map((r) => r.locale))];
     for (const locale of locales) {
@@ -231,9 +200,7 @@ async function releaseExpiredReservations() {
   }
 }
 
-/**
- * Aggregated queue health metrics for the /metrics endpoint.
- */
+
 async function getMetrics() {
   const { rows } = await pool.query(`
     SELECT

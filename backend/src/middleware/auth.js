@@ -1,9 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-/**
- * Verifies the Bearer JWT in the Authorization header.
- * Attaches { reviewer_id, locale } to req.reviewer on success.
- */
+
 function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {

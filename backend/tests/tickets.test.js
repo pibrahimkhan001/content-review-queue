@@ -1,12 +1,4 @@
-/**
- * Integration tests for the ticket reservation and expiry flow.
- *
- * These tests run against a real PostgreSQL + Redis instance (spun up by
- * docker-compose) so they verify actual concurrency semantics, not just mocks.
- *
- * Run with: npm test (inside the Docker network) or
- *           docker-compose exec backend npm test
- */
+
 require('dotenv').config();
 const request = require('supertest');
 const app = require('../src/app');
@@ -24,13 +16,11 @@ beforeAll(async () => {
   await initializeDatabase();
   await getRedisClient();
 
-  // Insert a deterministic reviewer for tests
   await pool.query(
     `INSERT INTO reviewers (reviewer_id, locale) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
     [TEST_REVIEWER, TEST_LOCALE]
   );
 
-  // Insert a fresh ticket so we have something to work with
   const { rows } = await pool.query(
     `INSERT INTO tickets (id, locale, title, content, priority)
      VALUES ($1, $2, 'Test Ticket', 'Test content for integration tests', 'normal')
@@ -90,7 +80,6 @@ describe('GET /tickets/available', () => {
     expect(res.body.locale).toBe(TEST_LOCALE);
     expect(Array.isArray(res.body.tickets)).toBe(true);
 
-    // All returned tickets must match the locale
     for (const t of res.body.tickets) {
       expect(t.locale).toBe(TEST_LOCALE);
     }
@@ -106,7 +95,6 @@ describe('GET /tickets/available', () => {
 
 describe('POST /tickets/:id/reserve', () => {
   it('reserves an available ticket', async () => {
-    // Reset to available in case a previous run left it reserved
     await pool.query(`UPDATE tickets SET status = 'available' WHERE id = $1`, [testTicketId]);
 
     const res = await request(app)
@@ -184,7 +172,6 @@ describe('Auto-release / re-queuing', () => {
   let expiredTicketId;
 
   beforeEach(async () => {
-    // Create a ticket and a reservation that has already expired
     const { rows } = await pool.query(
       `INSERT INTO tickets (id, locale, title, content, priority)
        VALUES ($1, $2, 'Expiry Test Ticket', 'Will expire', 'low')
@@ -195,7 +182,6 @@ describe('Auto-release / re-queuing', () => {
 
     await pool.query(`UPDATE tickets SET status = 'reserved' WHERE id = $1`, [expiredTicketId]);
 
-    // Deliberately backdate expires_at so it looks expired
     await pool.query(
       `INSERT INTO reservations (ticket_id, reviewer_id, expires_at)
        VALUES ($1, $2, NOW() - INTERVAL '1 minute')`,
