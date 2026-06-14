@@ -162,6 +162,39 @@ async function confirmTicket(ticketId, reviewerId) {
 }
 
 /**
+ * Returns all currently-active reservations held by a reviewer, joined with
+ * their ticket details. Used by the "Process Tickets" view so a reviewer can
+ * see exactly what they've picked up and start processing it.
+ *
+ * Ordered by soonest-expiring first so the most urgent ticket surfaces on top.
+ */
+async function getMyReservations(reviewerId) {
+  const { rows } = await pool.query(
+    `SELECT r.id AS reservation_id, r.reserved_at, r.expires_at,
+            t.id, t.locale, t.title, t.content, t.priority, t.status AS ticket_status
+     FROM reservations r
+     JOIN tickets t ON t.id = r.ticket_id
+     WHERE r.reviewer_id = $1 AND r.status = 'active'
+     ORDER BY r.expires_at ASC`,
+    [reviewerId]
+  );
+
+  return rows.map((row) => ({
+    reservation_id: row.reservation_id,
+    reserved_at: row.reserved_at,
+    expires_at: row.expires_at,
+    ticket: {
+      id: row.id,
+      locale: row.locale,
+      title: row.title,
+      content: row.content,
+      priority: row.priority,
+      status: row.ticket_status,
+    },
+  }));
+}
+
+/**
  * Scans for expired active reservations and releases them back into the queue.
  * Called by the background cron job every 30 seconds.
  */
@@ -217,7 +250,10 @@ async function getMetrics() {
     SELECT
       COUNT(*) FILTER (WHERE status = 'active')    AS active_reservations,
       COUNT(*) FILTER (WHERE status = 'expired')   AS expired_reservations,
-      COUNT(*) FILTER (WHERE status = 'confirmed') AS confirmed_reservations
+      COUNT(*) FILTER (WHERE status = 'confirmed') AS confirmed_reservations,
+      COUNT(*) FILTER (
+        WHERE status = 'active' AND expires_at <= NOW() + INTERVAL '2 minutes'
+      ) AS expiring_soon
     FROM reservations
   `);
 
@@ -238,9 +274,10 @@ async function getMetrics() {
       completed:  parseInt(ticketCounts.completed),
     },
     reservations: {
-      active:    parseInt(resRows[0].active_reservations),
-      expired:   parseInt(resRows[0].expired_reservations),
-      confirmed: parseInt(resRows[0].confirmed_reservations),
+      active:        parseInt(resRows[0].active_reservations),
+      expired:       parseInt(resRows[0].expired_reservations),
+      confirmed:     parseInt(resRows[0].confirmed_reservations),
+      expiring_soon: parseInt(resRows[0].expiring_soon),
     },
     by_locale: byLocale.map((r) => ({
       locale:    r.locale,
@@ -255,6 +292,7 @@ module.exports = {
   getAvailableTickets,
   reserveTicket,
   confirmTicket,
+  getMyReservations,
   releaseExpiredReservations,
   getMetrics,
 };

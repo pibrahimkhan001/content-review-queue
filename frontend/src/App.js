@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import ProcessTicketsPage from './pages/ProcessTicketsPage';
 import MetricsPage from './pages/MetricsPage';
 import './App.css';
 
@@ -39,6 +40,12 @@ export default function App() {
             Queue
           </button>
           <button
+            className={`nav-btn ${view === 'process' ? 'active' : ''}`}
+            onClick={() => setView('process')}
+          >
+            Process Tickets
+          </button>
+          <button
             className={`nav-btn ${view === 'metrics' ? 'active' : ''}`}
             onClick={() => setView('metrics')}
           >
@@ -57,6 +64,7 @@ export default function App() {
 
       <main className="app-main">
         {view === 'dashboard' && <DashboardPage session={session} />}
+        {view === 'process'   && <ProcessTicketsPage session={session} />}
         {view === 'metrics'   && <MetricsPage />}
       </main>
     </div>

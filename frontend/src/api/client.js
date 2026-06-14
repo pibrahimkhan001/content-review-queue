@@ -33,6 +33,15 @@ export async function fetchAvailableTickets(token) {
   return data.tickets;
 }
 
+/**
+ * Returns the authenticated reviewer's currently-active reservations
+ * (tickets they've picked up but not yet confirmed), soonest-expiring first.
+ */
+export async function fetchMyReservations(token) {
+  const data = await request('/tickets/my-reservations', { headers: authHeader(token) });
+  return data.reservations;
+}
+
 export async function reserveTicket(token, id) {
   return request(`/tickets/${id}/reserve`, {
     method: 'POST',

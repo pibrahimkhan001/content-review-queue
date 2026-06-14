@@ -148,6 +148,37 @@ curl -X POST http://localhost:4000/tickets/<ticket-id>/confirm \
 
 **Error (409):** Reservation not found, wrong reviewer, or already expired.
 
+#### `GET /tickets/my-reservations`
+
+Returns the authenticated reviewer's currently **active** reservations (tickets they've picked up but not yet confirmed), ordered soonest-expiring first. This powers the **Process Tickets** tab — once a ticket is reserved it disappears from `/tickets/available`, so this endpoint is how a reviewer finds their way back to it.
+
+```bash
+curl http://localhost:4000/tickets/my-reservations \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response:**
+```json
+{
+  "reviewer_id": "alice",
+  "reservations": [
+    {
+      "reservation_id": "uuid",
+      "reserved_at": "2025-01-01T00:00:00Z",
+      "expires_at": "2025-01-01T00:20:00Z",
+      "ticket": {
+        "id": "uuid",
+        "locale": "West Coast",
+        "title": "User report: spam account",
+        "content": "...",
+        "priority": "high",
+        "status": "reserved"
+      }
+    }
+  ]
+}
+```
+
 ---
 
 ### Metrics
@@ -155,6 +186,8 @@ curl -X POST http://localhost:4000/tickets/<ticket-id>/confirm \
 #### `GET /metrics`
 
 Returns queue health statistics. No authentication required.
+
+`reservations.expiring_soon` counts active reservations with less than 2 minutes remaining before auto-release — a quick signal for how many reviewers are about to lose their pickup and need to hit **Start Processing** on the Process Tickets tab.
 
 ```bash
 curl http://localhost:4000/metrics
@@ -172,7 +205,8 @@ curl http://localhost:4000/metrics
   "reservations": {
     "active": 1,
     "expired": 0,
-    "confirmed": 1
+    "confirmed": 1,
+    "expiring_soon": 0
   },
   "by_locale": [
     { "locale": "East Coast", "available": 5, "reserved": 0 },
@@ -198,6 +232,20 @@ Server-Sent Events endpoint. Pushes updated ticket lists every 10 seconds. The t
 curl http://localhost:4000/health
 # {"status":"ok","ts":"2025-01-01T00:00:00.000Z"}
 ```
+
+---
+
+## Frontend Tabs
+
+The UI has three tabs once a reviewer signs in:
+
+| Tab | Purpose |
+|---|---|
+| **Queue** | Browse unassigned tickets in your locale (`GET /tickets/available`) and reserve one (`POST /tickets/:id/reserve`). Once reserved, a ticket leaves this list — it's no longer "available". |
+| **Process Tickets** | Shows every ticket you currently hold an active reservation for (`GET /tickets/my-reservations`), each with a live 20-minute countdown. Click **Start Processing** to confirm (`POST /tickets/:id/confirm`), which stops the countdown and moves the ticket to `confirmed`. |
+| **Metrics** | Queue-wide health stats (`GET /metrics`), refreshed every 15 seconds. |
+
+**Why a dedicated "Process Tickets" tab?** Reserving a ticket removes it from the available queue, so the reviewer needed a place to come back to in order to act on what they just picked up. The Queue tab shows a banner with a live countdown after reserving, pointing the reviewer to this tab to confirm before the 20-minute window lapses.
 
 ---
 
@@ -272,7 +320,7 @@ content-review-queue/
 │   ├── src/
 │   │   ├── api/           # All backend calls (single source of truth)
 │   │   ├── components/    # TicketCard
-│   │   ├── pages/         # LoginPage, DashboardPage, MetricsPage
+│   │   ├── pages/         # LoginPage, DashboardPage, ProcessTicketsPage, MetricsPage
 │   │   ├── App.js         # Top-level routing
 │   │   └── index.js
 │   ├── public/

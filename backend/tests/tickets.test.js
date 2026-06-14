@@ -126,6 +126,29 @@ describe('POST /tickets/:id/reserve', () => {
   });
 });
 
+// ── My Reservations / Process Tickets ──────────────────────────────────────────
+
+describe('GET /tickets/my-reservations', () => {
+  it('requires authentication', async () => {
+    const res = await request(app).get('/tickets/my-reservations');
+    expect(res.status).toBe(401);
+  });
+
+  it('returns the active reservation for the reviewer who reserved it', async () => {
+    const res = await request(app)
+      .get('/tickets/my-reservations')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.reservations)).toBe(true);
+
+    const entry = res.body.reservations.find((r) => r.ticket.id === testTicketId);
+    expect(entry).toBeDefined();
+    expect(entry).toHaveProperty('expires_at');
+    expect(entry.ticket.status).toBe('reserved');
+  });
+});
+
 // ── Confirm ───────────────────────────────────────────────────────────────────
 
 describe('POST /tickets/:id/confirm', () => {
@@ -142,6 +165,16 @@ describe('POST /tickets/:id/confirm', () => {
       .post(`/tickets/${testTicketId}/confirm`)
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(409);
+  });
+
+  it('removes the ticket from my-reservations once confirmed', async () => {
+    const res = await request(app)
+      .get('/tickets/my-reservations')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    const entry = res.body.reservations.find((r) => r.ticket.id === testTicketId);
+    expect(entry).toBeUndefined();
   });
 });
 
@@ -195,6 +228,7 @@ describe('GET /metrics', () => {
     expect(res.status).toBe(200);
     expect(res.body.tickets).toHaveProperty('available');
     expect(res.body.tickets).toHaveProperty('reserved');
+    expect(res.body.reservations).toHaveProperty('expiring_soon');
     expect(Array.isArray(res.body.by_locale)).toBe(true);
   });
 });

@@ -2,6 +2,7 @@ const {
   getAvailableTickets,
   reserveTicket,
   confirmTicket,
+  getMyReservations,
   getMetrics,
 } = require('../services/ticketService');
 
@@ -61,6 +62,22 @@ async function confirm(req, res) {
 }
 
 /**
+ * GET /tickets/my-reservations
+ * Returns the authenticated reviewer's currently-active reservations
+ * (i.e. tickets they have picked up and have not yet confirmed),
+ * ordered by soonest-expiring first. Powers the "Process Tickets" view.
+ */
+async function myReservations(req, res) {
+  try {
+    const reservations = await getMyReservations(req.reviewer.reviewer_id);
+    return res.json({ reviewer_id: req.reviewer.reviewer_id, reservations });
+  } catch (err) {
+    console.error('[Tickets] myReservations error:', err);
+    return res.status(500).json({ error: 'Failed to fetch your reservations' });
+  }
+}
+
+/**
  * GET /metrics
  * Returns queue health statistics. No auth required so dashboards can poll freely.
  */
@@ -74,4 +91,4 @@ async function metrics(req, res) {
   }
 }
 
-module.exports = { listAvailable, reserve, confirm, metrics };
+module.exports = { listAvailable, reserve, confirm, myReservations, metrics };

@@ -133,7 +133,7 @@ export default function DashboardPage({ session }) {
         <div className={`reservation-banner ${isUrgent ? 'urgent' : ''}`}>
           <span>
             {isUrgent ? '⚠️' : '⏱'}&nbsp;
-            You have a reserved ticket — confirm before time runs out.
+            You have a reserved ticket — head to the <strong>Process Tickets</strong> tab to start processing it before time runs out.
           </span>
           <span className="countdown">
             {timeLeft > 0 ? formatTime(timeLeft) : 'Expired'}
