@@ -18,11 +18,6 @@ docker-compose up --build
 | Backend  | http://localhost:4000      |
 | Metrics  | http://localhost:4000/metrics |
 
-To run backend tests (requires the stack to be up):
-
-```bash
-docker-compose exec backend npm test
-```
 
 ---
 
@@ -41,7 +36,7 @@ On first boot, `src/utils/seed.js` inserts a fixed set of reviewers and tickets 
 | External ingestion API | Realistic | Significant extra scope; distracts from the queue mechanics |
 | Message queue (Kafka/SQS) | Production-realistic | Over-engineered for a prototype; adds infra complexity |
 
-The seed script approach keeps the entire system runnable with a single `docker-compose up` command and zero manual data entry, which is exactly what an assessable prototype needs.
+The seed script approach keeps the entire system runnable with a single `docker-compose up` command and zero manual data entry.
 
 **Seeded data:**
 
@@ -306,5 +301,7 @@ content-review-queue/
 Claude (Anthropic) was used to accelerate the implementation of this project. Specifically:
 - Boilerplate for Docker and nginx configuration
 - Initial scaffolding for the Express route structure
+- Styling the frontend
+- Sample seed data
 
 All business logic (reservation locking, expiry mechanism, locale scoping, JWT strategy, schema design) was designed and reasoned through independently. I can walk through every technical decision during a review session.

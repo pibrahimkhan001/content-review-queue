@@ -8,13 +8,16 @@ COPY package*.json ./
 RUN npm ci
 
 COPY src ./src
+COPY tests ./tests
+
 RUN chown -R appuser:appgroup /app
 
-# ── Production stage ──────────────────────────────────────────────────────────
 FROM base AS production
 
 RUN npm prune --omit=dev
 
 USER appuser
+
 EXPOSE 4000
+
 CMD ["node", "src/server.js"]
